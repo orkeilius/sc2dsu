@@ -54,6 +54,29 @@ jobs:
         if: runner.os == 'Linux'
         run: .github/scripts/check-linux-portability.sh "${{ matrix.binary }}" "${{ matrix.max_glibc }}"
 
+      - name: Install linuxdeploy
+        if: runner.os == 'Linux'
+        id: install-linuxdeploy
+        uses: miurahr/install-linuxdeploy-action@v1.8.0
+        with:
+          plugins: appimage
+      - name: Build AppImage
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+          ARCH: x86_64
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          "${{ steps.install-linuxdeploy.outputs.linuxdeploy }}" \
+            --appdir "$RUNNER_TEMP/AppDir" \
+            --executable target/release/sc2dsu \
+            --desktop-file packaging/linux/sc2dsu.desktop \
+            --output appimage
+          mv ./*.AppImage "dist/sc2dsu-${GITHUB_REF_NAME}-linux-x86_64.AppImage"
+          ls -lh dist/*.AppImage
+
       - name: Stage artifact
         shell: bash
         run: |
